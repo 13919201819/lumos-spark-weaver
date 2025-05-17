@@ -1,4 +1,6 @@
 
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -52,7 +54,7 @@
   }
 
   body {
-    @apply bg-background text-foreground antialiased overflow-x-hidden;
+    @apply bg-background text-foreground antialiased overflow-x-hidden font-poppins;
   }
 
   .glass-card {
@@ -66,4 +68,46 @@
   .glass-button {
     @apply bg-white/5 border border-white/10 backdrop-blur-lg hover:bg-white/10 transition-all duration-300;
   }
+
+  .floating {
+    animation: floating 6s ease-in-out infinite;
+  }
+  
+  .glow {
+    animation: glow 3s ease-in-out infinite alternate;
+  }
+
+  .hover-3d {
+    transition: transform 0.3s ease;
+    transform-style: preserve-3d;
+  }
+
+  .hover-3d:hover {
+    transform: translateZ(20px) rotateX(5deg) rotateY(5deg);
+  }
+  
+  .cyber-button {
+    @apply relative overflow-hidden bg-transparent border border-primary/50 text-primary font-medium rounded-md;
+    transition: all 0.3s ease;
+  }
+  
+  .cyber-button::before {
+    @apply absolute top-0 left-0 w-full h-full bg-primary/20 transform scale-x-0 origin-left;
+    content: '';
+    transition: transform 0.3s ease;
+  }
+  
+  .cyber-button:hover::before {
+    transform: scale-x-100;
+  }
+}
+
+@keyframes floating {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+}
+
+@keyframes glow {
+  0% { box-shadow: 0 0 10px rgba(139, 92, 246, 0.3); }
+  100% { box-shadow: 0 0 25px rgba(139, 92, 246, 0.7), 0 0 40px rgba(76, 181, 240, 0.5); }
 }
