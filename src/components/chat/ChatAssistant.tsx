@@ -7,6 +7,7 @@ import ChatHeader from './ChatHeader';
 import MessageList from './MessageList';
 import ChatForm from './ChatForm';
 import { Message } from './types';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const ChatAssistant: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -18,6 +19,7 @@ const ChatAssistant: React.FC = () => {
   const [speechEnabled, setSpeechEnabled] = useState(true);
   const recognition = useRef<any>(null);
   const synthesisRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const isMobile = useIsMobile();
 
   // Initialize speech recognition
   useEffect(() => {
@@ -60,7 +62,7 @@ const ChatAssistant: React.FC = () => {
         }
       };
     } else {
-      toast.error("Speech recognition is not supported in your browser.");
+      console.log("Speech recognition is not supported in your browser.");
     }
     
     return () => {
@@ -80,19 +82,31 @@ const ChatAssistant: React.FC = () => {
       synthesisRef.current = new SpeechSynthesisUtterance();
       
       // Get the best voice for English
-      const voices = window.speechSynthesis.getVoices();
-      const preferredVoice = voices.find(voice => voice.lang === 'en-US' && voice.name.includes('Google') && voice.name.includes('Female'));
-      
-      if (synthesisRef.current) {
-        synthesisRef.current.voice = preferredVoice || null;
-        synthesisRef.current.rate = 1;
-        synthesisRef.current.pitch = 1;
-        synthesisRef.current.volume = 0.8;
+      const loadVoices = () => {
+        const voices = window.speechSynthesis.getVoices();
+        const preferredVoice = voices.find(voice => 
+          voice.lang === 'en-US' && 
+          (voice.name.includes('Google') || voice.name.includes('Female') || voice.name.includes('Natural'))
+        );
         
-        synthesisRef.current.onstart = () => setIsSpeaking(true);
-        synthesisRef.current.onend = () => setIsSpeaking(false);
-        synthesisRef.current.onerror = () => setIsSpeaking(false);
+        if (synthesisRef.current) {
+          synthesisRef.current.voice = preferredVoice || voices[0] || null;
+          synthesisRef.current.rate = 1;
+          synthesisRef.current.pitch = 1;
+          synthesisRef.current.volume = 0.8;
+          
+          synthesisRef.current.onstart = () => setIsSpeaking(true);
+          synthesisRef.current.onend = () => setIsSpeaking(false);
+          synthesisRef.current.onerror = () => setIsSpeaking(false);
+        }
+      };
+
+      // Chrome requires this workaround to load voices
+      if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = loadVoices;
       }
+      
+      loadVoices();
     }
   }, []);
 
@@ -150,6 +164,8 @@ const ChatAssistant: React.FC = () => {
   };
 
   const handleSubmit = (inputText: string) => {
+    if (!inputText.trim()) return;
+    
     // Add user message
     const newUserMessage: Message = { id: Date.now(), text: inputText, isUser: true };
     setMessages(prev => [...prev, newUserMessage]);
@@ -199,11 +215,16 @@ const ChatAssistant: React.FC = () => {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            className="fixed bottom-6 right-6 w-80 sm:w-96 h-[500px] bg-background/95 backdrop-blur-lg border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50 flex flex-col"
-            initial={{ scale: 0.8, opacity: 0 }}
+            className={`fixed ${isMobile ? 'bottom-0 right-0 left-0 w-full h-[80vh] rounded-t-2xl' : 'bottom-6 right-6 w-80 sm:w-96 h-[500px] rounded-2xl'} bg-background/95 backdrop-blur-lg border border-white/10 shadow-2xl overflow-hidden z-50 flex flex-col`}
+            initial={{ 
+              scale: 0.8, 
+              opacity: 0,
+              y: isMobile ? 200 : 0 
+            }}
             animate={{ 
               scale: 1, 
               opacity: 1,
+              y: 0,
               transition: { 
                 type: 'spring', 
                 stiffness: 300, 
@@ -213,6 +234,7 @@ const ChatAssistant: React.FC = () => {
             exit={{ 
               scale: 0.8, 
               opacity: 0,
+              y: isMobile ? 200 : 0,
               transition: { duration: 0.2 } 
             }}
           >
